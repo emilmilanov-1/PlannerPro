@@ -67,7 +67,6 @@ dotnet run --urls http://localhost:5091
 ```text
 src/PlannerPro.Web/       MVC уеб приложението
 tests/PlannerPro.Tests/   автоматичните тестове
-docs/                    обяснения за разработката и защитата
 ```
 
 SQLite файлът се създава в `src/PlannerPro.Web/Data/plannerpro.db`. Той е изключен от Git; схемата се възстановява чрез migration файловете.
@@ -138,7 +137,3 @@ dotnet test PlannerPro.sln --no-build --no-restore
 ```
 
 Последната проверка завършва с 0 грешки, 0 предупреждения и 57 успешни теста.
-
-## Защита
-
-Подробният ред на демонстрацията, обясненията на архитектурата и примерните отговори на въпроси са в `docs/07_FINALIZATION_AND_DEFENSE.md`.
