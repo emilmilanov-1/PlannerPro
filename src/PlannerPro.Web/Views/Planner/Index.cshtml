@@ -1,0 +1,164 @@
+@model PlannerOverviewViewModel
+@{
+    ViewData["Title"] = "Планер";
+    var periodEnd = Model.Request.StartDate.AddDays(Model.Request.PlanningDays - 1);
+    var periodHolidays = Model.Holidays
+        .Where(holiday => holiday.Date >= Model.Request.StartDate && holiday.Date <= periodEnd)
+        .ToList();
+    var scheduledHours = Math.Round(Model.TotalScheduledMinutes / 60d, 1);
+}
+
+<header class="page-header">
+    <div><span class="eyebrow text-primary">Интелигентен график</span><h1>Седмичен планер</h1><p>PlannerPro подрежда задачите по приоритет, разделя ги на работни блокове и спазва свободното ти време.</p></div>
+    @if (Model.HasSchedule)
+    {
+        <span class="status-pill">Запазен в SQLite</span>
+    }
+</header>
+
+@if (!string.IsNullOrWhiteSpace(Model.HolidayWarning))
+{
+    <div class="alert alert-warning" role="alert">@Model.HolidayWarning</div>
+}
+
+@foreach (var warning in Model.ScheduleWarnings)
+{
+    <div class="alert alert-warning" role="alert">@warning</div>
+}
+
+<div class="planner-layout">
+    <aside>
+        <section class="content-card planner-settings-card">
+            <div class="section-heading compact">
+                <div><span class="eyebrow text-primary">Настройки</span><h2 class="h4">Налично време</h2></div>
+            </div>
+
+            <form asp-action="Generate" method="post" data-loading data-loading-text="Генериране…">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label asp-for="Request.StartDate" class="form-label"></label>
+                        <input asp-for="Request.StartDate" class="form-control" type="date" />
+                        <span asp-validation-for="Request.StartDate" class="text-danger"></span>
+                    </div>
+                    <div class="col-12">
+                        <label asp-for="Request.PlanningDays" class="form-label"></label>
+                        <input asp-for="Request.PlanningDays" class="form-control" min="1" max="14" />
+                        <span asp-validation-for="Request.PlanningDays" class="text-danger"></span>
+                    </div>
+                    <div class="col-6">
+                        <label asp-for="Request.DayStart" class="form-label"></label>
+                        <input asp-for="Request.DayStart" asp-format="{0:HH:mm}" class="form-control" type="time" />
+                        <span asp-validation-for="Request.DayStart" class="text-danger"></span>
+                    </div>
+                    <div class="col-6">
+                        <label asp-for="Request.DayEnd" class="form-label"></label>
+                        <input asp-for="Request.DayEnd" asp-format="{0:HH:mm}" class="form-control" type="time" />
+                        <span asp-validation-for="Request.DayEnd" class="text-danger"></span>
+                    </div>
+                    <div class="col-12">
+                        <label asp-for="Request.DailyAvailableMinutes" class="form-label"></label>
+                        <input asp-for="Request.DailyAvailableMinutes" class="form-control" step="15" />
+                        <span asp-validation-for="Request.DailyAvailableMinutes" class="text-danger"></span>
+                    </div>
+                    <div class="col-6">
+                        <label asp-for="Request.MaxBlockMinutes" class="form-label"></label>
+                        <input asp-for="Request.MaxBlockMinutes" class="form-control" step="15" />
+                        <span asp-validation-for="Request.MaxBlockMinutes" class="text-danger"></span>
+                    </div>
+                    <div class="col-6">
+                        <label asp-for="Request.BreakMinutes" class="form-label"></label>
+                        <input asp-for="Request.BreakMinutes" class="form-control" step="5" />
+                        <span asp-validation-for="Request.BreakMinutes" class="text-danger"></span>
+                    </div>
+                    <div class="col-12 planner-checks">
+                        <div class="form-check">
+                            <input asp-for="Request.IncludeWeekends" class="form-check-input" />
+                            <label asp-for="Request.IncludeWeekends" class="form-check-label"></label>
+                        </div>
+                        <div class="form-check">
+                            <input asp-for="Request.SkipPublicHolidays" class="form-check-input" />
+                            <label asp-for="Request.SkipPublicHolidays" class="form-check-label"></label>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary w-100 mt-4" type="submit">Генерирай график</button>
+            </form>
+
+            <div class="api-status @(Model.HolidayApiAvailable ? "api-status-online" : "api-status-fallback")">
+                <span class="api-status-dot" aria-hidden="true"></span>
+                <div>
+                    <strong>@(Model.HolidayApiAvailable ? "Празниците са налични" : "Резервен режим")</strong>
+                    <small>@(Model.HolidaysFromCache ? "Данни от кеша." : Model.HolidayApiAvailable ? "Данни от Nager.Holidays." : "График без празници.")</small>
+                </div>
+            </div>
+        </section>
+
+        <section class="content-card mt-4">
+            <span class="eyebrow text-primary">Периодът</span>
+            <h2 class="h5 mt-2">Празници</h2>
+            @if (periodHolidays.Count == 0)
+            {
+                <p class="text-secondary small mb-0">Няма национални празници между @Model.Request.StartDate.ToString("dd.MM") и @periodEnd.ToString("dd.MM.yyyy").</p>
+            }
+            else
+            {
+                <div class="period-holidays">
+                    @foreach (var holiday in periodHolidays)
+                    {
+                        <div><time>@holiday.Date.ToString("dd.MM")</time><span>@holiday.Name</span></div>
+                    }
+                </div>
+            }
+        </section>
+    </aside>
+
+    <section>
+        @if (!Model.HasSchedule)
+        {
+            <div class="content-card empty-state planner-empty">
+                <div class="empty-icon" aria-hidden="true">▦</div>
+                <h2>Графикът още не е генериран</h2>
+                <p>Избери начална дата и налично време. Активните задачи ще бъдат подредени по score и срок.</p>
+            </div>
+        }
+        else
+        {
+            <div class="planner-summary row g-3 mb-4">
+                <div class="col-12 col-sm-4"><article class="metric-card accent-blue"><span class="metric-label">Работни блокове</span><strong>@Model.ScheduleDays.Sum(day => day.Blocks.Count)</strong><small>Без застъпване</small></article></div>
+                <div class="col-12 col-sm-4"><article class="metric-card accent-green"><span class="metric-label">Задачи</span><strong>@Model.ScheduledTaskCount</strong><small>Разпределени</small></article></div>
+                <div class="col-12 col-sm-4"><article class="metric-card accent-purple"><span class="metric-label">Общо време</span><strong>@scheduledHours ч.</strong><small>@Model.TotalScheduledMinutes минути</small></article></div>
+            </div>
+
+            <div class="schedule-days">
+                @foreach (var day in Model.ScheduleDays)
+                {
+                    <article class="content-card schedule-day">
+                        <header>
+                            <div><span class="eyebrow text-primary">@day.Date.ToDateTime(TimeOnly.MinValue).ToString("dddd", new System.Globalization.CultureInfo("bg-BG"))</span><h2>@day.Date.ToString("dd.MM.yyyy")</h2></div>
+                            <span class="status-pill">@day.PlannedMinutes мин.</span>
+                        </header>
+                        <div class="schedule-blocks">
+                            @foreach (var block in day.Blocks)
+                            {
+                                var priorityClass = $"priority-{block.TaskItem?.Priority.ToString().ToLowerInvariant()}";
+                                <div class="schedule-block">
+                                    <time>@block.StartTime.ToString("HH:mm")<span>–</span>@block.EndTime.ToString("HH:mm")</time>
+                                    <div>
+                                        <a asp-controller="Tasks" asp-action="Details" asp-route-id="@block.TaskItemId">@(block.TaskItem?.Title ?? "Изтрита задача")</a>
+                                        <small>@block.DurationMinutes минути · score @(block.TaskItem?.PriorityScore ?? 0)</small>
+                                    </div>
+                                    <span class="priority-dot @priorityClass" title="@block.TaskItem?.Priority"></span>
+                                </div>
+                            }
+                        </div>
+                    </article>
+                }
+            </div>
+        }
+    </section>
+</div>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

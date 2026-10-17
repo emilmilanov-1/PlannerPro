@@ -1,0 +1,20 @@
+@model TaskItem
+@{
+    ViewData["Title"] = "Нова задача";
+}
+
+<header class="page-header compact-header">
+    <div><span class="eyebrow text-primary">Нова задача</span><h1>Какво трябва да свършиш?</h1><p>Попълни данните и PlannerPro автоматично ще изчисли приоритет, оценка и срокова група.</p></div>
+</header>
+
+<section class="content-card form-card">
+    <form asp-action="Create" method="post" data-loading data-loading-text="Създаване…">
+        <partial name="_TaskForm" model="Model" />
+        <div class="form-actions">
+            <a class="btn btn-outline-secondary" asp-action="Index">Отказ</a>
+            <button class="btn btn-primary" type="submit">Създай задача</button>
+        </div>
+    </form>
+</section>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

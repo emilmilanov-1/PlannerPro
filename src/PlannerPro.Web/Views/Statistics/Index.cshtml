@@ -1,0 +1,123 @@
+@model StatisticsViewModel
+@{
+    ViewData["Title"] = "Статистика";
+    var maxDailyMinutes = Math.Max(1, Model.WeeklyProgress.Max(day => day.PlannedMinutes));
+    var taskPercentageCss = Model.TaskCompletionPercentage.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+    var timePercentageCss = Model.TimeCompletionPercentage.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+}
+
+<header class="page-header">
+    <div><span class="eyebrow text-primary">Измерим напредък</span><h1>Статистика</h1><p>Сравни завършените задачи, вложеното време и натоварването за следващите седем дни.</p></div>
+    <span class="status-pill">Актуални данни от SQLite</span>
+</header>
+
+@if (Model.TotalTasks == 0)
+{
+    <section class="content-card empty-state">
+        <div class="empty-icon" aria-hidden="true">↗</div>
+        <h2>Все още няма статистика</h2>
+        <p>Създай първата задача и показателите ще се изчислят автоматично.</p>
+        <a class="btn btn-primary" asp-controller="Tasks" asp-action="Create">Добави задача</a>
+    </section>
+}
+else
+{
+    <section class="row g-4">
+        <div class="col-12 col-lg-6">
+            <article class="content-card h-100">
+                <span class="eyebrow text-primary">По задачи</span>
+                <div class="stat-progress-heading"><h2>@Model.TaskCompletionPercentage.ToString("0.#")%</h2><span>@Model.CompletedTasks от @Model.TotalTasks</span></div>
+                <div class="progress" role="progressbar" aria-label="Напредък по задачи" aria-valuenow="@Model.TaskCompletionPercentage" aria-valuemin="0" aria-valuemax="100"><div class="progress-bar" style="width: @taskPercentageCss%"></div></div>
+                <small>Процентът измерва броя завършени задачи.</small>
+            </article>
+        </div>
+        <div class="col-12 col-lg-6">
+            <article class="content-card h-100">
+                <span class="eyebrow text-primary">По време</span>
+                <div class="stat-progress-heading"><h2>@Model.TimeCompletionPercentage.ToString("0.#")%</h2><span>@Model.CompletedMinutes от @Model.EstimatedMinutes мин.</span></div>
+                <div class="progress" role="progressbar" aria-label="Напредък по време" aria-valuenow="@Model.TimeCompletionPercentage" aria-valuemin="0" aria-valuemax="100"><div class="progress-bar progress-bar-time" style="width: @timePercentageCss%"></div></div>
+                <small>Процентът измерва изпълненото спрямо прогнозното време.</small>
+            </article>
+        </div>
+    </section>
+
+    <section class="row g-4 mt-1">
+        <div class="col-12 col-xl-6">
+            <article class="content-card h-100">
+                <div class="section-heading compact"><div><span class="eyebrow text-primary">Разпределение</span><h2 class="h4">По статус</h2></div><span class="status-pill">@Model.TotalTasks задачи</span></div>
+                <div class="distribution-list">
+                    @foreach (var item in Model.StatusDistribution)
+                    {
+                        var percentageCss = item.Percentage.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+                        <div class="distribution-row">
+                            <div><span class="distribution-swatch @item.CssClass"></span><strong>@item.Label</strong><span>@item.Count</span></div>
+                            <div class="distribution-track"><span class="@item.CssClass" style="width: @percentageCss%"></span></div>
+                            <small>@item.Percentage.ToString("0.#")%</small>
+                        </div>
+                    }
+                </div>
+            </article>
+        </div>
+        <div class="col-12 col-xl-6">
+            <article class="content-card h-100">
+                <div class="section-heading compact"><div><span class="eyebrow text-primary">Активни задачи</span><h2 class="h4">По приоритет</h2></div></div>
+                <div class="distribution-list">
+                    @foreach (var item in Model.PriorityDistribution)
+                    {
+                        var percentageCss = item.Percentage.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+                        <div class="distribution-row">
+                            <div><span class="priority-badge @item.CssClass">@item.Label</span><span>@item.Count задачи</span></div>
+                            <div class="distribution-track"><span class="@item.CssClass" style="width: @percentageCss%"></span></div>
+                            <small>@item.Percentage.ToString("0.#")%</small>
+                        </div>
+                    }
+                </div>
+            </article>
+        </div>
+    </section>
+
+    <section class="content-card mt-4">
+        <div class="section-heading compact"><div><span class="eyebrow text-primary">Категории</span><h2 class="h4">Напредък по време</h2></div></div>
+        <div class="category-grid">
+            @foreach (var category in Model.CategoryProgress)
+            {
+                var percentageCss = category.CompletionPercentage.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+                <article class="category-stat">
+                    <div><strong>@category.Label</strong><span>@category.TotalTasks задачи</span></div>
+                    <div class="progress" role="progressbar" aria-label="@category.Label" aria-valuenow="@category.CompletionPercentage" aria-valuemin="0" aria-valuemax="100"><div class="progress-bar progress-bar-time" style="width: @percentageCss%"></div></div>
+                    <small>@category.CompletedMinutes / @category.EstimatedMinutes минути · @category.CompletionPercentage.ToString("0.#")%</small>
+                </article>
+            }
+        </div>
+    </section>
+
+    <section class="content-card mt-4">
+        <div class="section-heading compact"><div><span class="eyebrow text-primary">Следващи 7 дни</span><h2 class="h4">Натоварване по график</h2></div><a class="text-link" asp-controller="Planner" asp-action="Index">Отвори планера →</a></div>
+        @if (Model.WeeklyProgress.All(day => day.PlannedMinutes == 0))
+        {
+            <div class="chart-empty"><p>Все още няма генерирани блокове за този период.</p><a class="btn btn-outline-primary" asp-controller="Planner" asp-action="Index">Създай график</a></div>
+        }
+        else
+        {
+            <div class="weekly-chart" aria-label="Планирани и изпълнени минути по дни">
+                @foreach (var day in Model.WeeklyProgress)
+                {
+                    var plannedHeight = day.PlannedMinutes * 100d / maxDailyMinutes;
+                    var completedHeight = day.PlannedMinutes == 0 ? 0 : day.CompletedMinutes * 100d / maxDailyMinutes;
+                    var plannedHeightCss = plannedHeight.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+                    var completedHeightCss = completedHeight.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+                    <div class="week-column">
+                        <div class="week-bar-area" title="@day.CompletedMinutes от @day.PlannedMinutes минути">
+                            <span class="week-bar-planned" style="height: @plannedHeightCss%"></span>
+                            <span class="week-bar-completed" style="height: @completedHeightCss%"></span>
+                        </div>
+                        <strong>@day.Date.ToDateTime(TimeOnly.MinValue).ToString("ddd", new System.Globalization.CultureInfo("bg-BG"))</strong>
+                        <small>@day.Date.ToString("dd.MM")</small>
+                        <span>@day.PlannedMinutes мин.</span>
+                    </div>
+                }
+            </div>
+            <div class="chart-legend"><span><i class="legend-planned"></i>Планирано</span><span><i class="legend-completed"></i>Изпълнено</span></div>
+        }
+    </section>
+}

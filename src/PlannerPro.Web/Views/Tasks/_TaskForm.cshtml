@@ -1,0 +1,58 @@
+@model TaskItem
+
+<div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+<div class="ai-form-note" role="note">
+    <span class="ai-form-icon" aria-hidden="true">✦</span>
+    <div><strong>Автоматичен анализ</strong><small>При записване срокът, важността, оставащото време, статусът и ключовите думи ще формират оценка от 0 до 100.</small></div>
+</div>
+
+<div class="row g-4">
+    <div class="col-12">
+        <label asp-for="Title" class="form-label"></label>
+        <input asp-for="Title" class="form-control" placeholder="Напр. Подготовка за изпит" autofocus />
+        <span asp-validation-for="Title" class="text-danger"></span>
+    </div>
+    <div class="col-12">
+        <label asp-for="Description" class="form-label"></label>
+        <textarea asp-for="Description" class="form-control" rows="4" placeholder="Кратко описание и очакван резултат"></textarea>
+        <span asp-validation-for="Description" class="text-danger"></span>
+    </div>
+    <div class="col-12 col-md-6">
+        <label asp-for="Category" class="form-label"></label>
+        <select asp-for="Category" asp-items="Html.GetEnumSelectList<TaskCategory>()" class="form-select"></select>
+        <span asp-validation-for="Category" class="text-danger"></span>
+    </div>
+    <div class="col-12 col-md-6">
+        <label asp-for="Deadline" class="form-label"></label>
+        <input asp-for="Deadline" asp-format="{0:yyyy-MM-ddTHH:mm}" class="form-control" type="datetime-local" />
+        <span asp-validation-for="Deadline" class="text-danger"></span>
+    </div>
+    <div class="col-12 col-md-6">
+        <label asp-for="EstimatedMinutes" class="form-label"></label>
+        <input asp-for="EstimatedMinutes" class="form-control" step="15" />
+        <div class="form-text">Между 15 минути и 24 часа.</div>
+        <span asp-validation-for="EstimatedMinutes" class="text-danger"></span>
+    </div>
+    <div class="col-12 col-md-6">
+        <label asp-for="CompletedMinutes" class="form-label"></label>
+        <input asp-for="CompletedMinutes" class="form-control" step="15" />
+        <span asp-validation-for="CompletedMinutes" class="text-danger"></span>
+    </div>
+    <div class="col-12 col-md-6">
+        <label asp-for="UserImportance" class="form-label"></label>
+        <select asp-for="UserImportance" class="form-select">
+            <option value="1">1 — много ниска</option>
+            <option value="2">2 — ниска</option>
+            <option value="3">3 — средна</option>
+            <option value="4">4 — висока</option>
+            <option value="5">5 — критична</option>
+        </select>
+        <span asp-validation-for="UserImportance" class="text-danger"></span>
+    </div>
+    <div class="col-12 col-md-6">
+        <label asp-for="Status" class="form-label"></label>
+        <select asp-for="Status" asp-items="Html.GetEnumSelectList<PlannerTaskStatus>()" class="form-select"></select>
+        <span asp-validation-for="Status" class="text-danger"></span>
+    </div>
+</div>

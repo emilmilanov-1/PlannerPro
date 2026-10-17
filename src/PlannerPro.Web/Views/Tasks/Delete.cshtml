@@ -1,0 +1,20 @@
+@model TaskItem
+@{
+    ViewData["Title"] = "Изтриване";
+}
+
+<header class="page-header compact-header">
+    <div><span class="eyebrow text-danger">Потвърждение</span><h1>Изтриване на задача</h1><p>Това действие премахва задачата от локалната база данни.</p></div>
+</header>
+
+<section class="content-card form-card">
+    <div class="alert alert-warning" role="alert">Сигурен ли си, че искаш да изтриеш <strong>@Model.Title</strong>?</div>
+    <dl class="details-grid">
+        <div><dt>Категория</dt><dd>@Html.DisplayFor(model => model.Category)</dd></div>
+        <div><dt>Краен срок</dt><dd>@Model.Deadline.ToString("dd.MM.yyyy HH:mm")</dd></div>
+    </dl>
+    <form asp-action="Delete" asp-route-id="@Model.Id" method="post" class="form-actions" data-loading data-loading-text="Изтриване…">
+        <a class="btn btn-outline-secondary" asp-action="Details" asp-route-id="@Model.Id">Отказ</a>
+        <button class="btn btn-danger" type="submit">Да, изтрий</button>
+    </form>
+</section>

@@ -1,0 +1,115 @@
+@model DashboardViewModel
+@{
+    ViewData["Title"] = "Начало";
+    var taskProgressDegrees = Model.CompletionPercentage * 3.6;
+    var timeProgressDegrees = Model.TimeCompletionPercentage * 3.6;
+    var taskProgressCss = taskProgressDegrees.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+    var timeProgressCss = timeProgressDegrees.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+}
+
+<section class="hero-panel">
+    <div>
+        <span class="eyebrow">Твоят фокус за деня</span>
+        <h1>Планирай по-умно.<br />Завършвай навреме.</h1>
+        <p>PlannerPro подрежда задачите по важност и срок, изгражда изпълним график и показва реалния напредък.</p>
+        <div class="d-flex flex-wrap gap-2">
+            <a class="btn btn-primary btn-lg" asp-controller="Tasks" asp-action="Create">Добави задача</a>
+            <a class="btn btn-outline-light btn-lg" asp-controller="Planner" asp-action="Index">Създай график</a>
+        </div>
+    </div>
+    <div class="hero-orbit" aria-hidden="true">
+        <div class="orbit-center">✓</div>
+        <span class="orbit-dot orbit-dot-one"></span>
+        <span class="orbit-dot orbit-dot-two"></span>
+        <span class="orbit-dot orbit-dot-three"></span>
+    </div>
+</section>
+
+<section class="section-block" aria-labelledby="overview-title">
+    <div class="section-heading">
+        <div><span class="eyebrow text-primary">Преглед</span><h2 id="overview-title">Днешният фокус</h2></div>
+        <span class="status-pill">Актуални данни от SQLite</span>
+    </div>
+    <div class="row g-3">
+        <div class="col-12 col-md-6 col-xl-3"><article class="metric-card accent-blue"><span class="metric-label">Активни задачи</span><strong>@Model.ActiveTasks</strong><small>@Model.TotalTasks общо</small></article></div>
+        <div class="col-12 col-md-6 col-xl-3"><article class="metric-card accent-purple"><span class="metric-label">Със срок днес</span><strong>@Model.TodayTasks</strong><small>Изискват внимание</small></article></div>
+        <div class="col-12 col-md-6 col-xl-3"><article class="metric-card accent-orange"><span class="metric-label">Просрочени</span><strong>@Model.OverdueTasks</strong><small>Срокът вече е изтекъл</small></article></div>
+        <div class="col-12 col-md-6 col-xl-3"><article class="metric-card accent-green"><span class="metric-label">Висок приоритет</span><strong>@Model.HighPriorityTasks</strong><small>Високи и критични</small></article></div>
+    </div>
+</section>
+
+<section class="row g-4">
+    <div class="col-12 col-xl-7">
+        <article class="content-card h-100">
+            @if (Model.NextScheduleBlock is not null)
+            {
+                var block = Model.NextScheduleBlock;
+                <div class="section-heading compact">
+                    <div><span class="eyebrow text-primary">Следващ работен блок</span><h2>@block.TaskItem?.Title</h2></div>
+                    <span class="priority-badge priority-@block.TaskItem?.Priority.ToString().ToLowerInvariant()">@block.TaskItem?.PriorityScore/100</span>
+                </div>
+                <div class="next-block-time">
+                    <strong>@block.StartTime.ToString("dd.MM · HH:mm")</strong>
+                    <span>до @block.EndTime.ToString("HH:mm") · @block.DurationMinutes минути</span>
+                </div>
+                <p class="text-secondary mt-3 mb-4">@block.TaskItem?.PriorityReason</p>
+                <a class="text-link" asp-controller="Planner" asp-action="Index">Отвори целия график →</a>
+            }
+            else if (Model.NextTask is not null)
+            {
+                <div class="section-heading compact">
+                    <div><span class="eyebrow text-primary">Препоръчана задача</span><h2>@Model.NextTask.Title</h2></div>
+                    <span class="priority-badge priority-@Model.NextTask.Priority.ToString().ToLowerInvariant()">@Model.NextTask.PriorityScore/100</span>
+                </div>
+                <p class="text-secondary mb-2">Краен срок: <strong>@Model.NextTask.Deadline.ToString("dd.MM.yyyy HH:mm")</strong></p>
+                <p class="text-secondary mb-4">@Model.NextTask.PriorityReason</p>
+                <a class="text-link" asp-controller="Tasks" asp-action="Details" asp-route-id="@Model.NextTask.Id">Преглед на задачата →</a>
+            }
+            else
+            {
+                <div class="empty-inline">
+                    <div class="empty-icon" aria-hidden="true">✓</div>
+                    <div><h2 class="h4">Няма активни задачи</h2><p>Добави нова задача, когато си готов.</p></div>
+                </div>
+            }
+        </article>
+    </div>
+    <div class="col-12 col-xl-5">
+        <article class="content-card h-100">
+            <div class="section-heading compact mb-3">
+                <div><span class="eyebrow text-primary">Предстоящи</span><h2 class="h4">Крайни срокове</h2></div>
+            </div>
+            @if (Model.UpcomingDeadlines.Count == 0)
+            {
+                <p class="text-secondary mb-0">Няма предстоящи срокове.</p>
+            }
+            else
+            {
+                <div class="deadline-list">
+                    @foreach (var task in Model.UpcomingDeadlines)
+                    {
+                        <a asp-controller="Tasks" asp-action="Details" asp-route-id="@task.Id">
+                            <time><strong>@task.Deadline.Day.ToString("00")</strong><span>@task.Deadline.ToString("MM")</span></time>
+                            <div><strong>@task.Title</strong><small>@task.Deadline.ToString("HH:mm") · score @task.PriorityScore</small></div>
+                        </a>
+                    }
+                </div>
+            }
+        </article>
+    </div>
+</section>
+
+<section class="row g-4 py-4">
+    <div class="col-12 col-lg-6">
+        <article class="content-card progress-card">
+            <div class="progress-ring" style="--progress: @(taskProgressCss)deg" aria-label="@Model.CompletionPercentage процента завършени задачи"><span>@Model.CompletionPercentage.ToString("0.#")%</span></div>
+            <div><span class="eyebrow text-primary">Напредък по задачи</span><h2 class="h4 mt-2">@Model.CompletedTasks от @Model.TotalTasks завършени</h2><p>Всеки завършен запис има еднаква тежест в този показател.</p></div>
+        </article>
+    </div>
+    <div class="col-12 col-lg-6">
+        <article class="content-card progress-card">
+            <div class="progress-ring time-ring" style="--progress: @(timeProgressCss)deg" aria-label="@Model.TimeCompletionPercentage процента изпълнено време"><span>@Model.TimeCompletionPercentage.ToString("0.#")%</span></div>
+            <div><span class="eyebrow text-primary">Напредък по време</span><h2 class="h4 mt-2">@Model.CompletedMinutes от @Model.EstimatedMinutes мин.</h2><p>Показва реалния обем работа, а не само броя задачи.</p></div>
+        </article>
+    </div>
+</section>

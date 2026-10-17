@@ -1,0 +1,21 @@
+@model TaskItem
+@{
+    ViewData["Title"] = "Редакция";
+}
+
+<header class="page-header compact-header">
+    <div><span class="eyebrow text-primary">Редакция</span><h1>@Model.Title</h1><p>Промени данните или отчети напредъка по задачата.</p></div>
+</header>
+
+<section class="content-card form-card">
+    <form asp-action="Edit" asp-route-id="@Model.Id" method="post" data-loading data-loading-text="Запазване…">
+        <input asp-for="Id" type="hidden" />
+        <partial name="_TaskForm" model="Model" />
+        <div class="form-actions">
+            <a class="btn btn-outline-secondary" asp-action="Index">Отказ</a>
+            <button class="btn btn-primary" type="submit">Запази промените</button>
+        </div>
+    </form>
+</section>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }
